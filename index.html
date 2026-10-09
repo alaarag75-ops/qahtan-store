@@ -188,9 +188,11 @@
         let storeAdmins = JSON.parse(localStorage.getItem('qahtan_admins') || '["قحطان (المدير الرئيسي)"]');
         let storeLogs = JSON.parse(localStorage.getItem('qahtan_logs') || '[]');
 
+        // رقم الواتساب الخاص بالمتجر الذي يستقبل الطلبات
+        const STORE_WHATSAPP_NUMBER = "966548712782";
+
         window.addEventListener('DOMContentLoaded', () => {
             if (storeNumbers.length === 0) {
-                // Default numbers sample
                 storeNumbers = [
                     { id: 1, phone: "+201012345678", price: "5$", req: "لتفعيل الواتساب والتليجرام" },
                     { id: 2, phone: "+966509876543", price: "10$", req: "تفعيل ألعاب وخدمات VIP" }
@@ -235,7 +237,8 @@
         function orderNumber(phone, price) {
             logActivity(`قام زائر بالنقر على طلب الرقم (${phone}) بسعر ${price}`);
             const msg = encodeURIComponent(`أهلاً QAHTAN STORE! أرغب في شراء الرقم: ${phone} بسعر ${price}`);
-            window.open(`https://wa.me/?text=${msg}`, '_blank');
+            // التحويل المباشر إلى رقم الواتساب المحدد (966548712782)
+            window.open(`https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${msg}`, '_blank');
         }
 
         // Admin Access Modals Logic
@@ -244,8 +247,6 @@
 
         function verifyAdminPass() {
             const pass = document.getElementById('adminPassInput').value.trim();
-            
-            // تحقق الرمز السرّي الدقيق المطلوبة كابيتال
             if (pass === "QAHTAN STORE") {
                 document.getElementById('adminPassInput').value = '';
                 closeAdminPassModal();
