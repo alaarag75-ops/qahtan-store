@@ -131,6 +131,7 @@
             <!-- Tab Buttons -->
             <div class="flex gap-2 border-b border-purple-500/20 pb-3">
                 <button onclick="switchAdminTab('addNumber')" id="tabNumBtn" class="bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs">إدارة الأرقام</button>
+                <button onclick="switchAdminTab('settings')" id="tabSetBtn" class="bg-purple-950/60 text-purple-300 font-bold px-4 py-2 rounded-xl text-xs border border-purple-500/30">رقم الاستقبال</button>
                 <button onclick="switchAdminTab('addAdmin')" id="tabAdmBtn" class="bg-purple-950/60 text-purple-300 font-bold px-4 py-2 rounded-xl text-xs border border-purple-500/30">إدارة المديرين</button>
                 <button onclick="switchAdminTab('viewLogs')" id="tabLogBtn" class="bg-purple-950/60 text-purple-300 font-bold px-4 py-2 rounded-xl text-xs border border-purple-500/30">سجل الزوار</button>
             </div>
@@ -139,7 +140,7 @@
             <div id="secAddNumber" class="space-y-4">
                 <h4 class="text-xs font-bold text-purple-300">إضافة رقم جديد للبيع:</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input type="text" id="newNumVal" placeholder="الرقم (مثال: +2010...)" class="qahtan-input rounded-xl px-3 py-2 text-xs">
+                    <input type="text" id="newNumVal" placeholder="الرقم المعروض (مثال: +966...)" class="qahtan-input rounded-xl px-3 py-2 text-xs">
                     <input type="text" id="newNumPrice" placeholder="السعر (مثال: 5$)" class="qahtan-input rounded-xl px-3 py-2 text-xs">
                     <input type="text" id="newNumReq" placeholder="المتطلبات (مثال: تليجرام/واتساب)" class="qahtan-input rounded-xl px-3 py-2 text-xs">
                 </div>
@@ -154,7 +155,17 @@
                 </div>
             </div>
 
-            <!-- Section 2: Manage Admins -->
+            <!-- Section 2: Store WhatsApp Setting -->
+            <div id="secSettings" class="hidden space-y-4">
+                <h4 class="text-xs font-bold text-purple-300">تحديد رقم الواتساب الذي يستقبل الطلبات:</h4>
+                <p class="text-[11px] text-gray-400">اكتب رقم الواتساب مع كود الدولة وبدون علامة (+) ليتلقى عليه الطلبات المباشرة.</p>
+                <div class="flex gap-2">
+                    <input type="text" id="storeWaInput" placeholder="مثال: 9665xxxxxxxx" class="w-full qahtan-input rounded-xl px-3 py-2 text-xs font-mono">
+                    <button onclick="saveWaNumber()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">حفظ الرقم</button>
+                </div>
+            </div>
+
+            <!-- Section 3: Manage Admins -->
             <div id="secAddAdmin" class="hidden space-y-4">
                 <h4 class="text-xs font-bold text-purple-300">إضافة مدير جديد للوحة:</h4>
                 <div class="flex gap-2">
@@ -167,7 +178,7 @@
                 </div>
             </div>
 
-            <!-- Section 3: Visitors Log -->
+            <!-- Section 4: Visitors Log -->
             <div id="secViewLogs" class="hidden space-y-3">
                 <h4 class="text-xs font-bold text-purple-300">سجل عمليات الزوار والطلبات:</h4>
                 <div id="logsList" class="space-y-2 max-h-60 overflow-y-auto text-xs font-mono"></div>
@@ -183,23 +194,12 @@
 
     <!-- JavaScript Store Logic -->
     <script>
-        // Database Initialization
         let storeNumbers = JSON.parse(localStorage.getItem('qahtan_numbers') || '[]');
         let storeAdmins = JSON.parse(localStorage.getItem('qahtan_admins') || '["قحطان (المدير الرئيسي)"]');
         let storeLogs = JSON.parse(localStorage.getItem('qahtan_logs') || '[]');
-
-        // رقم الواتساب الخاص بالمتجر الذي يستقبل الطلبات
-        const STORE_WHATSAPP_NUMBER = "966548712782";
+        let storeWhatsapp = localStorage.getItem('qahtan_wa_number') || '';
 
         window.addEventListener('DOMContentLoaded', () => {
-            if (storeNumbers.length === 0) {
-                storeNumbers = [
-                    { id: 1, phone: "+201012345678", price: "5$", req: "لتفعيل الواتساب والتليجرام" },
-                    { id: 2, phone: "+966509876543", price: "10$", req: "تفعيل ألعاب وخدمات VIP" }
-                ];
-                saveNumbers();
-            }
-
             logActivity("قام زائر بفتح المتجر ورؤية الأرقام");
             renderNumbers();
         });
@@ -210,7 +210,7 @@
             document.getElementById('numbersCount').innerText = storeNumbers.length;
 
             if (storeNumbers.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-400 text-xs">لا توجد أرقام متاحة للبيع حالياً...</div>';
+                grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-400 text-xs">لا توجد أرقام متاحة للبيع حالياً... أضف بعض الأرقام من لوحة المدير!</div>';
                 return;
             }
 
@@ -235,10 +235,13 @@
         }
 
         function orderNumber(phone, price) {
+            if (!storeWhatsapp) {
+                alert('لم يتم تحديد رقم واتساب للمتجر بعد! يرجى إضافته من لوحة المدير أولاً.');
+                return;
+            }
             logActivity(`قام زائر بالنقر على طلب الرقم (${phone}) بسعر ${price}`);
             const msg = encodeURIComponent(`أهلاً QAHTAN STORE! أرغب في شراء الرقم: ${phone} بسعر ${price}`);
-            // التحويل المباشر إلى رقم الواتساب المحدد (966548712782)
-            window.open(`https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+            window.open(`https://wa.me/${storeWhatsapp}?text=${msg}`, '_blank');
         }
 
         // Admin Access Modals Logic
@@ -259,6 +262,7 @@
 
         function openAdminDashboard() {
             document.getElementById('adminDashboardModal').classList.remove('hidden');
+            document.getElementById('storeWaInput').value = storeWhatsapp;
             renderAdminNumbers();
             renderAdminsList();
             renderLogs();
@@ -270,19 +274,24 @@
 
         function switchAdminTab(tab) {
             const secAdd = document.getElementById('secAddNumber');
+            const secSet = document.getElementById('secSettings');
             const secAdm = document.getElementById('secAddAdmin');
             const secLog = document.getElementById('secViewLogs');
 
             const btnNum = document.getElementById('tabNumBtn');
+            const btnSet = document.getElementById('tabSetBtn');
             const btnAdm = document.getElementById('tabAdmBtn');
             const btnLog = document.getElementById('tabLogBtn');
 
-            [secAdd, secAdm, secLog].forEach(s => s.classList.add('hidden'));
-            [btnNum, btnAdm, btnLog].forEach(b => b.className = "bg-purple-950/60 text-purple-300 font-bold px-4 py-2 rounded-xl text-xs border border-purple-500/30");
+            [secAdd, secSet, secAdm, secLog].forEach(s => s.classList.add('hidden'));
+            [btnNum, btnSet, btnAdm, btnLog].forEach(b => b.className = "bg-purple-950/60 text-purple-300 font-bold px-4 py-2 rounded-xl text-xs border border-purple-500/30");
 
             if (tab === 'addNumber') {
                 secAdd.classList.remove('hidden');
                 btnNum.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs";
+            } else if (tab === 'settings') {
+                secSet.classList.remove('hidden');
+                btnSet.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs";
             } else if (tab === 'addAdmin') {
                 secAdm.classList.remove('hidden');
                 btnAdm.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs";
@@ -290,6 +299,16 @@
                 secLog.classList.remove('hidden');
                 btnLog.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs";
             }
+        }
+
+        function saveWaNumber() {
+            const num = document.getElementById('storeWaInput').value.trim();
+            if (!num) return alert('يرجى كتابة الرقم المخصص للاستقبال!');
+            
+            storeWhatsapp = num;
+            localStorage.setItem('qahtan_wa_number', storeWhatsapp);
+            logActivity(`تم تعديل رقم واتساب المتجر إلى (${num})`);
+            alert('تم حفظ رقم الواتساب المخصص بنجاح!');
         }
 
         // Admin Functions: Managing Numbers
