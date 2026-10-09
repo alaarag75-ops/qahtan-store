@@ -108,7 +108,7 @@
             <div class="space-y-3">
                 <input type="password" id="adminPassInput" placeholder="رمز الدخول..." class="w-full qahtan-input rounded-xl px-4 py-3 text-center text-sm font-mono tracking-widest">
                 <button onclick="verifyAdminPass()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 rounded-xl text-xs transition">
-                    تاكيد الدخول
+                    تأكيد الدخول
                 </button>
             </div>
         </div>
@@ -158,7 +158,7 @@
             <!-- Section 2: Store WhatsApp Setting -->
             <div id="secSettings" class="hidden space-y-4">
                 <h4 class="text-xs font-bold text-purple-300">تحديد رقم الواتساب الذي يستقبل الطلبات:</h4>
-                <p class="text-[11px] text-gray-400">اكتب رقم الواتساب مع كود الدولة وبدون علامة (+) ليتلقى عليه الطلبات المباشرة.</p>
+                <p class="text-[11px] text-gray-400">اكتب رقم الواتساب الخاص بك مع كود الدولة وبدون علامة (+) ليتلقى عليه الطلبات المباشرة.</p>
                 <div class="flex gap-2">
                     <input type="text" id="storeWaInput" placeholder="مثال: 9665xxxxxxxx" class="w-full qahtan-input rounded-xl px-3 py-2 text-xs font-mono">
                     <button onclick="saveWaNumber()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs shrink-0">حفظ الرقم</button>
@@ -250,13 +250,15 @@
 
         function verifyAdminPass() {
             const pass = document.getElementById('adminPassInput').value.trim();
-            if (pass === "QAHTAN STORE") {
+            
+            // الباسورد المعدل بدقة: Qahtan 12 Store
+            if (pass === "Qahtan 12 Store") {
                 document.getElementById('adminPassInput').value = '';
                 closeAdminPassModal();
                 openAdminDashboard();
                 logActivity("تم دخول لوحة التحكم بواسطة المدير الرئيسي");
             } else {
-                alert('رمز الدخول غير صحيح! تأكد من كتابته بهذا الشكل: QAHTAN STORE');
+                alert('⚠️ رمز الدخول غير صحيح!');
             }
         }
 
